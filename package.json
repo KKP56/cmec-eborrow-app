@@ -1,0 +1,16 @@
+{
+  "name": "cmec-eborrow-app",
+  "version": "0.1.1",
+  "description": "CMEC E-Borrow App - ระบบยืมคืนหุ่นและอุปกรณ์ simulation",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

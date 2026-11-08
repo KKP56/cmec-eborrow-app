@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin | CMEC E-Borrow App</title>
+<link rel="icon" href="/logo/Logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="login-page">
+  <section class="login-hero admin-hero">
+    <img class="logo-lg" src="/logo/Logo.jpg" alt="CMEC logo">
+    <h1>CMEC E-Borrow<br>Admin Console</h1>
+    <p>จัดการหุ่นและอุปกรณ์ อนุมัติการยืม-คืน รับแจ้งซ่อม และดูสถิติการใช้งานรายเดือน</p>
+  </section>
+  <section class="login-box">
+    <form class="login-card admin" id="f">
+      <span class="role-tag">ผู้ดูแลระบบ (Admin)</span>
+      <h1>เข้าสู่ระบบ Admin</h1>
+      <p style="color:var(--muted);margin-top:0">สำหรับเจ้าหน้าที่ศูนย์ CMEC เท่านั้น</p>
+      <div class="field"><label for="u">ชื่อผู้ใช้</label><input id="u" autocomplete="username" required autofocus></div>
+      <div class="field"><label for="p">รหัสผ่าน</label><input id="p" type="password" autocomplete="current-password" required></div>
+      <div class="err" id="err"></div>
+      <button class="btn block" type="submit" style="background:var(--blue-dark)">เข้าสู่ระบบ Admin</button>
+      <div class="switch"><a href="/login.html">← กลับไปหน้าผู้ใช้งาน</a></div>
+    </form>
+  </section>
+</div>
+<script src="/js/login.js" data-portal="admin"></script>
+</body>
+</html>

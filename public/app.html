@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CMEC E-Borrow App</title>
+<link rel="icon" href="/logo/Logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#/items">
+      <img src="/logo/Logo.jpg" alt="logo">
+      <div>CMEC E-Borrow App<small>ระบบยืม-คืนหุ่นและอุปกรณ์ simulation</small></div>
+    </a>
+    <button class="menu-toggle" id="menuToggle" aria-label="เมนู">☰</button>
+    <nav class="nav" id="nav"></nav>
+    <div class="account">
+      <button class="account-btn" id="accBtn">
+        <span class="avatar" id="accAvatar">?</span>
+        <span class="who"><b id="accName">...</b><small id="accRole"></small></span>
+        <span style="color:var(--muted)">▾</span>
+      </button>
+      <div class="dropdown" id="accMenu"></div>
+    </div>
+  </div>
+</header>
+<main class="container" id="view"></main>
+<div id="toast"></div>
+<script src="/js/app.js"></script>
+</body>
+</html>
