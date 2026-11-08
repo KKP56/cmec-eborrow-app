@@ -37,7 +37,10 @@ const BK = {
 };
 const RP = { open: ['รอดำเนินการ', 'repair'], in_progress: ['กำลังซ่อม', 'busy'], done: ['เสร็จสิ้น', 'ok'] };
 const pill = (map, k) => `<span class="pill ${map[k][1]}">${map[k][0]}</span>`;
-const itemPill = (it) => it.status === 'repair' ? '<span class="pill repair">อยู่ระหว่างซ่อม</span>'
+const IST = { normal: ['✅ ปกติ', 'ok', 'var(--green)'], repair: ['🛠️ อยู่ระหว่างซ่อม', 'repair', 'var(--amber)'], broken: ['❌ หุ่นเสีย', 'broken', 'var(--red)'] };
+const statusOptions = (cur, labels = {}) => Object.entries(IST).map(([k, v]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${labels[k] || v[0]}</option>`).join('');
+const itemPill = (it) => it.status === 'broken' ? '<span class="pill broken">หุ่นเสีย</span>'
+  : it.status === 'repair' ? '<span class="pill repair">อยู่ระหว่างซ่อม</span>'
   : it.available ? '<span class="pill ok">ว่าง พร้อมให้ยืม</span>' : '<span class="pill busy">ถูกจอง/ยืมอยู่</span>';
 const img = (src, cls = '') => src ? `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy">` : `<span class="noimg ${cls}">🧍</span>`;
 
@@ -73,12 +76,12 @@ const NAV_ADMIN = [
 let BADGES = {};
 function renderNav() {
   const link = ([h, i, t, b]) => `<a href="${h}" class="${location.hash.startsWith(h) ? 'active' : ''}">${i} ${t}${b && BADGES[b] ? ` <span class="badge-n">${BADGES[b]}</span>` : ''}</a>`;
-  $('#nav').innerHTML = NAV_USER.map(link).join('') + (ME.role === 'admin' ? '<span class="sep"></span>' + NAV_ADMIN.map(link).join('') : '');
+  $('#nav').innerHTML = '<div class="nav-label">เมนู</div>' + NAV_USER.map(link).join('')
+    + (ME.role === 'admin' ? '<div class="nav-label">ผู้ดูแลระบบ</div>' + NAV_ADMIN.map(link).join('') : '');
 }
 async function refreshMe() {
   ME = await api('/api/me');
   if (ME.role === 'admin') { try { const s = await api('/api/admin/stats'); BADGES = { pending: s.pending, openReports: s.openReports }; } catch {} }
-  document.querySelector('.topbar').classList.toggle('is-admin', ME.role === 'admin');
   $('#accAvatar').textContent = ME.name.trim().charAt(0) || '?';
   $('#accName').textContent = ME.name;
   $('#accRole').textContent = ME.role === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน';
@@ -102,7 +105,9 @@ async function refreshMe() {
 }
 $('#accBtn').onclick = (e) => { e.stopPropagation(); $('#accMenu').classList.toggle('open'); };
 document.addEventListener('click', (e) => { if (!e.target.closest('.account')) $('#accMenu').classList.remove('open'); });
-$('#menuToggle').onclick = () => $('#nav').classList.toggle('open');
+const setSidebar = (open) => document.body.classList.toggle('sidebar-open', open);
+$('#menuToggle').onclick = () => setSidebar(!document.body.classList.contains('sidebar-open'));
+$('#sidebarBg').onclick = () => setSidebar(false);
 
 function changePassword() {
   const m = modal('เปลี่ยนรหัสผ่าน', `
@@ -217,8 +222,8 @@ async function pageItems() {
   const draw = () => {
     const t = q.text.toLowerCase();
     const list = items.filter((i) => (!q.cat || i.category === q.cat) && (!q.onlyFree || i.available) && (!t || (i.code + ' ' + i.name).toLowerCase().includes(t)));
-    const free = items.filter((i) => i.available).length, rep = items.filter((i) => i.status === 'repair').length;
-    $('#sum').innerHTML = [['🧍', items.length, 'ทั้งหมด'], ['✅', free, `ว่างช่วง ${fmtD(q.start)}${q.end !== q.start ? ' – ' + fmtD(q.end) : ''}`], ['📅', items.length - free - rep, 'ถูกจอง/ยืมอยู่'], ['🛠️', rep, 'อยู่ระหว่างซ่อม']]
+    const free = items.filter((i) => i.available).length, rep = items.filter((i) => i.status !== 'normal').length;
+    $('#sum').innerHTML = [['🧍', items.length, 'ทั้งหมด'], ['✅', free, `ว่างช่วง ${fmtD(q.start)}${q.end !== q.start ? ' – ' + fmtD(q.end) : ''}`], ['📅', items.length - free - rep, 'ถูกจอง/ยืมอยู่'], ['🛠️', rep, 'ซ่อม / เสีย']]
       .map(([i, v, l]) => `<div class="card kpi"><div class="ico">${i}</div><div><div class="v">${v}</div><div class="l">${l}</div></div></div>`).join('');
     $('#list').innerHTML = list.length ? list.map((i) => `
       <div class="card item">
@@ -228,7 +233,7 @@ async function pageItems() {
           <div class="name" title="${esc(i.name)}">${esc(i.name)}</div>
           <div class="cat">${esc(i.category)}</div>
           <div class="actions">
-            <button class="btn sm" data-book="${i.id}" ${i.status === 'repair' ? 'disabled' : ''}>📅 จอง</button>
+            <button class="btn sm" data-book="${i.id}" ${i.status !== 'normal' ? 'disabled' : ''}>📅 จอง</button>
             <button class="btn ghost sm" data-info="${i.id}">รายละเอียด</button>
           </div>
         </div>
@@ -322,7 +327,7 @@ function pageGuide() {
     ${ME.role === 'admin' ? sec('🛡️', 'สำหรับผู้ดูแลระบบ', [
       ['จัดการการจอง', 'บันทึกรับของ → บันทึกคืน (นับสถิติเมื่อบันทึกรับของ) หรือยกเลิกการจอง'],
       ['จองแทนผู้ใช้', 'ปุ่ม "+ จองแทนผู้ใช้" เลือกผู้ใช้เดิมหรือสร้างผู้ยืมใหม่'],
-      ['จัดการหุ่น', 'เพิ่ม แก้ไข ลบ อัปโหลดรูป และสลับสถานะ ปกติ / อยู่ระหว่างซ่อม'],
+      ['จัดการหุ่น', 'เพิ่ม แก้ไข ลบ อัปโหลดรูป และสลับสถานะ ปกติ / อยู่ระหว่างซ่อม / หุ่นเสีย (หุ่นที่ซ่อมหรือเสียจะจองไม่ได้)'],
       ['สถิติรายเดือน', 'ตัวเลขเริ่มนับใหม่ทุกต้นเดือนอัตโนมัติ และเลือกดูเดือนก่อนหน้าได้']]) : ''}`;
 }
 
@@ -334,7 +339,7 @@ async function pageAdminDashboard() {
   view.innerHTML = `<div class="page-head"><div><h1>สถิติการใช้งาน</h1><p>นับจำนวนครั้งที่ยืมจริง (บันทึกรับของ) — เริ่มนับใหม่ทุกต้นเดือน</p></div>
     <select id="mSel" style="width:auto">${s.months.map((m) => `<option value="${m}" ${m === s.month ? 'selected' : ''}>${fmtMonth(m)}</option>`).join('')}</select></div>
     <div class="grid kpis">
-      ${[['📈', s.total, `ครั้งที่ยืม (${fmtMonth(s.month)})`], ['📦', s.borrowedNow, 'กำลังถูกยืมอยู่'], ['⏳', s.pending, 'คำขอรออนุมัติ'], ['🛠️', s.repair, `อยู่ระหว่างซ่อม / ${s.items} ทั้งหมด`], ['🔔', s.openReports, 'เรื่องแจ้งซ่อมค้าง']]
+      ${[['📈', s.total, `ครั้งที่ยืม (${fmtMonth(s.month)})`], ['📦', s.borrowedNow, 'กำลังถูกยืมอยู่'], ['⏳', s.pending, 'คำขอรออนุมัติ'], ['🛠️', s.repair, `อยู่ระหว่างซ่อม / ${s.items} ทั้งหมด`], ['❌', s.broken, 'หุ่นเสีย'], ['🔔', s.openReports, 'เรื่องแจ้งซ่อมค้าง']]
       .map(([i, v, l]) => `<div class="card kpi"><div class="ico">${i}</div><div><div class="v">${v}</div><div class="l">${l}</div></div></div>`).join('')}
     </div>
     <div class="grid two-col">
@@ -393,15 +398,15 @@ async function pageAdminBookings() {
 async function pageAdminItems() {
   const items = await api('/api/items');
   const q = pageAdminItems.q || '';
-  view.innerHTML = `<div class="page-head"><div><h1>จัดการหุ่นและอุปกรณ์</h1><p>เพิ่ม แก้ไข ลบ และกำหนดสถานะ ปกติ / อยู่ระหว่างซ่อม</p></div><button class="btn" id="add">+ เพิ่มหุ่นใหม่</button></div>
+  view.innerHTML = `<div class="page-head"><div><h1>จัดการหุ่นและอุปกรณ์</h1><p>เพิ่ม แก้ไข ลบ และกำหนดสถานะ ปกติ / อยู่ระหว่างซ่อม / หุ่นเสีย</p></div><button class="btn" id="add">+ เพิ่มหุ่นใหม่</button></div>
     <div class="toolbar"><div class="grow"><input id="q" placeholder="🔍 ค้นหารหัส/ชื่อ" value="${esc(q)}"></div></div>
     <div class="card"><div class="table-wrap"><table><thead><tr><th></th><th>รหัส</th><th>ชื่อ</th><th>หมวดหมู่</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody id="tb"></tbody></table></div></div>`;
   const draw = () => {
     const t = $('#q').value.toLowerCase(); pageAdminItems.q = $('#q').value;
     $('#tb').innerHTML = items.filter((i) => (i.code + ' ' + i.name).toLowerCase().includes(t)).map((i) => `<tr>
       <td>${img(i.image, 'mini-thumb')}</td><td><b>${esc(i.code)}</b></td><td>${esc(i.name)}</td><td class="sub">${esc(i.category)}</td>
-      <td><select data-st="${i.id}" style="width:auto;padding:5px 8px;font-size:.85rem;${i.status === 'repair' ? 'color:var(--red);border-color:var(--red)' : 'color:var(--green)'}">
-        <option value="normal" ${i.status === 'normal' ? 'selected' : ''}>✅ ปกติ</option><option value="repair" ${i.status === 'repair' ? 'selected' : ''}>🛠️ อยู่ระหว่างซ่อม</option></select></td>
+      <td><select data-st="${i.id}" style="width:auto;padding:5px 8px;font-size:.85rem;color:${IST[i.status][2]};border-color:${i.status === 'normal' ? 'var(--line)' : IST[i.status][2]}">
+        ${statusOptions(i.status)}</select></td>
       <td><div class="acts"><button class="btn ghost sm" data-ed="${i.id}">แก้ไข</button><button class="btn danger sm" data-del="${i.id}">ลบ</button></div></td></tr>`).join('');
   };
   $('#q').oninput = draw; draw();
@@ -411,7 +416,7 @@ async function pageAdminItems() {
       <div class="field"><label>หมวดหมู่</label><select name="category">${CATS.map((c) => `<option ${c === it.category ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div></div>
       <div class="field"><label>ชื่อหุ่น/อุปกรณ์ *</label><input name="name" value="${esc(it.name || '')}" required></div>
       <div class="field"><label>รายละเอียด</label><textarea name="description" rows="3">${esc(it.description || '')}</textarea></div>
-      <div class="field-row"><div class="field"><label>สถานะ</label><select name="status"><option value="normal">ปกติ</option><option value="repair" ${it.status === 'repair' ? 'selected' : ''}>อยู่ระหว่างซ่อม</option></select></div>
+      <div class="field-row"><div class="field"><label>สถานะ</label><select name="status">${statusOptions(it.status || 'normal')}</select></div>
       <div class="field"><label>รูปภาพ ${it.image ? '(เว้นว่างเพื่อใช้รูปเดิม)' : ''}</label><input type="file" name="image" accept="image/png,image/jpeg,image/webp"></div></div>
       </form>`, '<button class="btn ghost" data-close>ยกเลิก</button><button class="btn" id="sv">บันทึก</button>');
     $('#sv', m).onclick = async () => {
@@ -442,7 +447,7 @@ async function pageAdminReports() {
     <div class="card"><div class="table-wrap">${rows.length ? `<table><thead><tr><th>วันที่</th><th>หุ่น</th><th>ผู้แจ้ง</th><th>อาการ</th><th>สถานะเรื่อง</th><th>สถานะหุ่น</th><th></th></tr></thead><tbody>
       ${rows.map((r) => `<tr><td class="sub">${fmtD(r.created_at)}</td><td><b>${esc(r.item_code)}</b><div class="sub">${esc(r.item_name)}</div></td>
         <td>${esc(r.user_name)}<div class="sub">${esc(r.user_department || '')}</div></td><td>${esc(r.detail)}${r.admin_note ? `<div class="sub">💬 ${esc(r.admin_note)}</div>` : ''}</td>
-        <td>${pill(RP, r.status)}</td><td>${r.item_status === 'repair' ? '<span class="pill repair">ซ่อม</span>' : '<span class="pill ok">ปกติ</span>'}</td>
+        <td>${pill(RP, r.status)}</td><td>${itemPill({ status: r.item_status, available: true })}</td>
         <td><button class="btn sm" data-r="${r.id}">อัปเดต</button></td></tr>`).join('')}
       </tbody></table>` : '<div class="empty"><div class="big">🎉</div>ไม่มีเรื่องแจ้งซ่อม</div>'}</div></div>`;
   view.onclick = (e) => {
@@ -451,7 +456,7 @@ async function pageAdminReports() {
     const m = modal('อัปเดตเรื่องแจ้งซ่อม', `<p><b>${esc(r.item_code)}</b> ${esc(r.item_name)}<br><span style="color:var(--muted)">${esc(r.detail)}</span></p>
       <div class="field"><label>สถานะเรื่อง</label><select id="rs">${Object.entries(RP).map(([k, v]) => `<option value="${k}" ${k === r.status ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></div>
       <div class="field"><label>หมายเหตุถึงผู้แจ้ง</label><textarea id="rn" rows="3">${esc(r.admin_note || '')}</textarea></div>
-      <div class="field"><label>สถานะหุ่น</label><select id="is"><option value="normal">✅ ปกติ (ให้ยืมได้)</option><option value="repair" ${r.item_status === 'repair' ? 'selected' : ''}>🛠️ อยู่ระหว่างซ่อม (ปิดการจอง)</option></select></div>`,
+      <div class="field"><label>สถานะหุ่น</label><select id="is">${statusOptions(r.item_status, { normal: '✅ ปกติ (ให้ยืมได้)', repair: '🛠️ อยู่ระหว่างซ่อม (ปิดการจอง)', broken: '❌ หุ่นเสีย (ปิดการจอง)' })}</select></div>`,
       '<button class="btn ghost" data-close>ยกเลิก</button><button class="btn" id="sv">บันทึก</button>');
     $('#sv', m).onclick = async () => {
       const ok = await run(async () => {
@@ -503,7 +508,7 @@ async function route() {
   if (p.startsWith('/admin') && ME.role !== 'admin') fn = pageItems;
   view.onclick = null;
   document.querySelectorAll('.modal-bg').forEach((m) => m.remove());
-  $('#nav').classList.remove('open');
+  setSidebar(false);
   renderNav();
   try { await fn(); } catch (e) { view.innerHTML = `<div class="empty"><div class="big">⚠️</div>${esc(e.message)}</div>`; }
 }

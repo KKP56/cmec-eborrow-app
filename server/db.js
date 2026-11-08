@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS items (
   category TEXT NOT NULL DEFAULT 'อื่นๆ',
   description TEXT DEFAULT '',
   image TEXT DEFAULT '',
-  status TEXT NOT NULL DEFAULT 'normal' CHECK (status IN ('normal','repair')),
+  status TEXT NOT NULL DEFAULT 'normal' CHECK (status IN ('normal','repair','broken')),
   created_at TEXT DEFAULT (datetime('now','localtime'))
 );
 CREATE TABLE IF NOT EXISTS bookings (
@@ -61,6 +61,30 @@ CREATE TABLE IF NOT EXISTS usage_monthly (
   PRIMARY KEY (month, item_id)
 );
 `);
+
+// Migration: older databases only allowed status 'normal'/'repair'. SQLite can't alter a CHECK,
+// so rebuild the items table (keeping ids, so bookings/reports/stats stay linked).
+const itemsSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='items'").get().sql;
+if (!itemsSql.includes("'broken'")) {
+  db.exec('PRAGMA foreign_keys = OFF');
+  db.exec(`BEGIN;
+    CREATE TABLE items_new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'อื่นๆ',
+      description TEXT DEFAULT '',
+      image TEXT DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'normal' CHECK (status IN ('normal','repair','broken')),
+      created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    INSERT INTO items_new SELECT id,code,name,category,description,image,status,created_at FROM items;
+    DROP TABLE items;
+    ALTER TABLE items_new RENAME TO items;
+    COMMIT;`);
+  db.exec('PRAGMA foreign_keys = ON');
+  console.log('Migrated items table: added status "broken"');
+}
 
 const CATEGORY_BY_PREFIX = {
   A: 'ทางเดินหายใจ',

@@ -1,0 +1,24 @@
+# Handoff — CMEC E-Borrow App (บันทึก 8 พ.ย. 2569)
+
+## สถานะปัจจุบัน
+- แอปทำงานได้ครบตามแผน: login แยก user/admin, ดูหุ่นว่าง, จองล่วงหน้า (จองแล้วอนุมัติทันที), แจ้งซ่อม, คู่มือ, admin จัดการหุ่น/การจอง/แจ้งซ่อม/ผู้ใช้/สถิติรายเดือน
+- Stack: Node.js 22.5+ / Express / `node:sqlite` — รันด้วย `npm start` (พอร์ต 3000, ถ้าไม่ว่างตั้ง `PORT`)
+- GitHub: https://github.com/KKP56/cmec-eborrow-app (private, branch `main`) — gh CLI login ค้างไว้บนเครื่องนี้แล้ว (บัญชี KKP56)
+
+## งานล่าสุด (commit แล้ว ยังไม่ได้ push)
+- เพิ่มสถานะหุ่น **"หุ่นเสีย" (`broken`)** — มี migration สร้างตาราง items ใหม่อัตโนมัติ
+- เปลี่ยนเมนูจากแถบบนเป็น **sidebar ด้านซ้าย** (มือถือกด ☰)
+- ทำต่อ: `git push`
+
+## สไลด์นำเสนอ (claude.ai, private)
+- ภาพรวมโปรเจกต์ 10 หน้า: https://claude.ai/artifact/Uq7MKHDUq8D74d2wmrYbYF
+- Interface tour 7 หน้า (ภาพหน้าจอจริง): https://claude.ai/artifact/CzdiupydauP4UWqJqQzbsJ
+- ฐานข้อมูลทดสอบในเครื่องมีข้อมูลตัวอย่างจากการถ่ายภาพหน้าจอ — ลบ `data/eborrow.db` ก่อนใช้งานจริง
+
+## ไอเดียที่คุยไว้ (ยังไม่ได้ทำ)
+- ตั้ง PM2 ให้แอปเปิดเองตอนบูตเครื่องเซิร์ฟเวอร์
+- Dockerfile / script สำรองไฟล์ `data/eborrow.db`
+- เอาขึ้นโฮสต์ (VPS + Caddy หรือ Railway + Volume ที่ `/app/data`)
+
+## บัญชีเริ่มต้น (ควรเปลี่ยนรหัสก่อนใช้งานจริง)
+- admin / admin1234, user / user1234

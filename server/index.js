@@ -30,6 +30,8 @@ const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000
 const thisMonth = () => today().slice(0, 7);
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
 const bad = (res, msg, code = 400) => res.status(code).json({ error: msg });
+const ITEM_STATUSES = ['normal', 'repair', 'broken'];
+const itemStatus = (s, fallback = 'normal') => (ITEM_STATUSES.includes(s) ? s : fallback);
 
 // ---------- Auth ----------
 app.post('/api/login', (req, res) => {
@@ -82,7 +84,7 @@ app.post('/api/items', requireAdmin, upload.single('image'), (req, res) => {
   if (!code || !name) return bad(res, 'กรุณากรอกรหัสและชื่อ');
   try {
     const r = db.prepare('INSERT INTO items (code,name,category,description,status,image) VALUES (?,?,?,?,?,?)')
-      .run(code.trim(), name.trim(), category || 'อื่นๆ', description || '', status === 'repair' ? 'repair' : 'normal',
+      .run(code.trim(), name.trim(), category || 'อื่นๆ', description || '', itemStatus(status),
         req.file ? '/uploads/' + req.file.filename : '');
     res.json({ id: Number(r.lastInsertRowid) });
   } catch { bad(res, 'รหัสนี้มีอยู่แล้ว'); }
@@ -95,14 +97,15 @@ app.put('/api/items/:id', requireAdmin, upload.single('image'), (req, res) => {
   try {
     db.prepare('UPDATE items SET code=?,name=?,category=?,description=?,status=?,image=? WHERE id=?').run(
       (b.code || it.code).trim(), (b.name || it.name).trim(), b.category || it.category,
-      b.description ?? it.description, b.status === 'repair' ? 'repair' : b.status === 'normal' ? 'normal' : it.status,
+      b.description ?? it.description, itemStatus(b.status, it.status),
       req.file ? '/uploads/' + req.file.filename : it.image, it.id);
     res.json({ ok: true });
   } catch { bad(res, 'รหัสนี้มีอยู่แล้ว'); }
 });
 
 app.patch('/api/items/:id/status', requireAdmin, (req, res) => {
-  const s = req.body.status === 'repair' ? 'repair' : 'normal';
+  if (!ITEM_STATUSES.includes(req.body.status)) return bad(res, 'สถานะไม่ถูกต้อง');
+  const s = req.body.status;
   db.prepare('UPDATE items SET status=? WHERE id=?').run(s, req.params.id);
   res.json({ ok: true });
 });
@@ -120,6 +123,7 @@ function createBooking(res, { item_id, user_id, start_date, end_date, purpose, c
   const it = db.prepare('SELECT * FROM items WHERE id=?').get(item_id);
   if (!it) return bad(res, 'ไม่พบหุ่น/อุปกรณ์', 404);
   if (it.status === 'repair') return bad(res, 'หุ่นนี้อยู่ระหว่างการซ่อม');
+  if (it.status === 'broken') return bad(res, 'หุ่นนี้เสีย ไม่สามารถให้ยืมได้');
   const clash = db.prepare(`SELECT start_date,end_date FROM bookings WHERE item_id=? AND status IN ${ACTIVE}
     AND start_date<=? AND end_date>=?`).get(item_id, end_date, start_date);
   if (clash) return bad(res, `ช่วงวันที่ชนกับการจองอื่น (${clash.start_date} ถึง ${clash.end_date})`, 409);
@@ -225,6 +229,7 @@ app.get('/api/admin/stats', requireAdmin, (req, res) => {
     month, months, total, top, byCategory,
     items: db.prepare('SELECT COUNT(*) c FROM items').get().c,
     repair: db.prepare("SELECT COUNT(*) c FROM items WHERE status='repair'").get().c,
+    broken: db.prepare("SELECT COUNT(*) c FROM items WHERE status='broken'").get().c,
     borrowedNow: db.prepare("SELECT COUNT(*) c FROM bookings WHERE status='borrowed'").get().c,
     pending: db.prepare("SELECT COUNT(*) c FROM bookings WHERE status='pending'").get().c,
     openReports: db.prepare("SELECT COUNT(*) c FROM reports WHERE status!='done'").get().c,
