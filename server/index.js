@@ -75,7 +75,7 @@ app.get('/api/items', requireUser, (req, res) => {
 });
 
 app.get('/api/items/:id/bookings', requireUser, (req, res) => {
-  res.json(db.prepare(`SELECT start_date,end_date,status FROM bookings WHERE item_id=? AND status IN ${ACTIVE}
+  res.json(db.prepare(`SELECT start_date,end_date,start_time,end_time,status FROM bookings WHERE item_id=? AND status IN ${ACTIVE}
     AND end_date>=? ORDER BY start_date`).all(req.params.id, today()));
 });
 
@@ -116,19 +116,23 @@ app.delete('/api/items/:id', requireAdmin, (req, res) => {
 });
 
 // ---------- Bookings ----------
-function createBooking(res, { item_id, user_id, start_date, end_date, purpose, created_by, status = 'pending' }) {
+const isTime = (t) => typeof t === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+const nowTime = () => new Date().toTimeString().slice(0, 5);
+function createBooking(res, { item_id, user_id, start_date, end_date, start_time = '08:00', end_time = '16:30', purpose, created_by, status = 'pending' }) {
   if (!isDate(start_date) || !isDate(end_date)) return bad(res, 'กรุณาเลือกวันที่');
-  if (end_date < start_date) return bad(res, 'วันคืนต้องไม่ก่อนวันยืม');
-  if (start_date < today()) return bad(res, 'ไม่สามารถจองย้อนหลังได้');
+  if (!isTime(start_time) || !isTime(end_time)) return bad(res, 'กรุณาเลือกเวลา');
+  const startAt = `${start_date} ${start_time}`, endAt = `${end_date} ${end_time}`;
+  if (endAt <= startAt) return bad(res, 'เวลาคืนต้องหลังเวลายืม');
+  if (startAt < `${today()} ${nowTime()}`) return bad(res, 'ไม่สามารถจองย้อนหลังได้');
   const it = db.prepare('SELECT * FROM items WHERE id=?').get(item_id);
   if (!it) return bad(res, 'ไม่พบหุ่น/อุปกรณ์', 404);
   if (it.status === 'repair') return bad(res, 'หุ่นนี้อยู่ระหว่างการซ่อม');
   if (it.status === 'broken') return bad(res, 'หุ่นนี้เสีย ไม่สามารถให้ยืมได้');
-  const clash = db.prepare(`SELECT start_date,end_date FROM bookings WHERE item_id=? AND status IN ${ACTIVE}
-    AND start_date<=? AND end_date>=?`).get(item_id, end_date, start_date);
-  if (clash) return bad(res, `ช่วงวันที่ชนกับการจองอื่น (${clash.start_date} ถึง ${clash.end_date})`, 409);
-  const r = db.prepare('INSERT INTO bookings (item_id,user_id,start_date,end_date,purpose,status,created_by) VALUES (?,?,?,?,?,?,?)')
-    .run(item_id, user_id, start_date, end_date, purpose || '', status, created_by);
+  const clash = db.prepare(`SELECT start_date,end_date,start_time,end_time FROM bookings WHERE item_id=? AND status IN ${ACTIVE}
+    AND (start_date||' '||start_time) < ? AND (end_date||' '||end_time) > ?`).get(item_id, endAt, startAt);
+  if (clash) return bad(res, `ช่วงเวลาชนกับการจองอื่น (${clash.start_date} ${clash.start_time} ถึง ${clash.end_date} ${clash.end_time})`, 409);
+  const r = db.prepare('INSERT INTO bookings (item_id,user_id,start_date,end_date,start_time,end_time,purpose,status,created_by) VALUES (?,?,?,?,?,?,?,?,?)')
+    .run(item_id, user_id, start_date, end_date, start_time, end_time, purpose || '', status, created_by);
   res.json({ id: Number(r.lastInsertRowid) });
 }
 

@@ -37,12 +37,12 @@ const BK = {
 };
 const RP = { open: ['รอดำเนินการ', 'repair'], in_progress: ['กำลังซ่อม', 'busy'], done: ['เสร็จสิ้น', 'ok'] };
 const pill = (map, k) => `<span class="pill ${map[k][1]}">${map[k][0]}</span>`;
-const IST = { normal: ['✅ ปกติ', 'ok', 'var(--green)'], repair: ['🛠️ อยู่ระหว่างซ่อม', 'repair', 'var(--amber)'], broken: ['❌ หุ่นเสีย', 'broken', 'var(--red)'] };
+const IST = { normal: ['ปกติ', 'ok', 'var(--green)'], repair: ['อยู่ระหว่างซ่อม', 'repair', 'var(--amber)'], broken: ['หุ่นเสีย', 'broken', 'var(--red)'] };
 const statusOptions = (cur, labels = {}) => Object.entries(IST).map(([k, v]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${labels[k] || v[0]}</option>`).join('');
 const itemPill = (it) => it.status === 'broken' ? '<span class="pill broken">หุ่นเสีย</span>'
   : it.status === 'repair' ? '<span class="pill repair">อยู่ระหว่างซ่อม</span>'
   : it.available ? '<span class="pill ok">ว่าง พร้อมให้ยืม</span>' : '<span class="pill busy">ถูกจอง/ยืมอยู่</span>';
-const img = (src, cls = '') => src ? `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy">` : `<span class="noimg ${cls}">🧍</span>`;
+const img = (src, cls = '') => src ? `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy">` : `<span class="noimg ${cls}">${ic('items')}</span>`;
 
 function modal(title, bodyHtml, footHtml = '') {
   const bg = document.createElement('div');
@@ -60,22 +60,49 @@ const confirmBox = (msg) => new Promise((res) => {
 });
 
 // ---------- top bar ----------
+const svgI = (p) => `<svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICONS = {
+  items: svgI('<circle cx="12" cy="4.5" r="2.2"/><path d="M8 21v-6l-1.5-1V9.5A2.5 2.5 0 0 1 9 7h6a2.5 2.5 0 0 1 2.5 2.5V14L16 15v6"/><path d="M12 13v8"/>'),
+  bookings: svgI('<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2.3 2.2 4.7-4.5"/>'),
+  report: svgI('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M12 10.5v6M9 13.5h6"/>'),
+  guide: svgI('<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/><path d="M6.5 8h2M6.5 11h2M15.5 8h2M15.5 11h2"/>'),
+  dashboard: svgI('<path d="M3.5 20.5h17"/><rect x="5" y="12" width="3" height="6" rx=".5"/><rect x="10.5" y="7" width="3" height="11" rx=".5"/><rect x="16" y="4" width="3" height="14" rx=".5"/>'),
+  manage: svgI('<path d="M8 4H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"/><rect x="8" y="2.5" width="8" height="3.5" rx="1"/><path d="M8 11h8M8 14.5h8M8 18h5"/>'),
+  itemsAdmin: svgI('<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>'),
+  repair: svgI('<path d="M14.5 6.5a4 4 0 0 0 5 5L13 18a2.1 2.1 0 0 1-3-3l6.5-6.5"/><path d="M14.5 6.5L17 4l3 3-2.5 2.5"/><path d="M5 5l4 4M3.5 8.5l3-3"/>'),
+  users: svgI('<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.5 2 4.5 4.9"/>'),
+  check: svgI('<circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.3l2.5 2.4 5-5"/>'),
+  x: svgI('<circle cx="12" cy="12" r="8.5"/><path d="M9 9l6 6M15 9l-6 6"/>'),
+  search: svgI('<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>'),
+  send: svgI('<path d="M21 3L10 14"/><path d="M21 3l-6.5 18-4.5-7-7-4.5z"/>'),
+  chat: svgI('<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z"/><path d="M8.5 10h.01M12 10h.01M15.5 10h.01"/>'),
+  box: svgI('<path d="M3.5 7.5L12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5L12 12l8.5-4.5M12 12v9M7.8 5.3l8.5 4.5"/>'),
+  user: svgI('<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/>'),
+  shield: svgI('<path d="M12 3l7.5 3v5.5c0 4.5-3.2 8.2-7.5 9.5-4.3-1.3-7.5-5-7.5-9.5V6z"/><path d="M9 12l2.2 2.2 4-4"/>'),
+  trend: svgI('<path d="M3.5 17l5.5-5.5 4 4 7.5-8"/><path d="M15 7.5h5.5V13"/>'),
+  clock: svgI('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+  bell: svgI('<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'),
+  inbox: svgI('<path d="M3.5 13.5l2.8-8A1.5 1.5 0 0 1 7.7 4.5h8.6a1.5 1.5 0 0 1 1.4 1l2.8 8V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><path d="M3.5 13.5H8l1.5 2.5h5l1.5-2.5h4.5"/>'),
+  party: svgI('<path d="M4 20l4.5-12 7.5 7.5z"/><path d="M14 4.5c.5 1.5 0 3-1 4M19.5 10c-1.5-.5-3 0-4 1M17 3.5v1.5M20.5 7H19M18.5 14.5l1 1"/>'),
+  warn: svgI('<path d="M12 4l9 15.5H3z"/><path d="M12 10v4.5M12 17.2h.01"/>'),
+};
+const ic = (k) => ICONS[k].replace('class="nav-ico"', 'class="ico-svg"');
 const NAV_USER = [
-  ['#/items', '🧍', 'หุ่นและอุปกรณ์'],
-  ['#/my-bookings', '📅', 'การจองของฉัน'],
-  ['#/report', '🛠️', 'แจ้งซ่อม'],
-  ['#/guide', '📘', 'คู่มือการใช้งาน'],
+  ['#/items', ICONS.items, 'หุ่นและอุปกรณ์'],
+  ['#/my-bookings', ICONS.bookings, 'การจองของฉัน'],
+  ['#/report', ICONS.report, 'แจ้งซ่อม'],
+  ['#/guide', ICONS.guide, 'คู่มือการใช้งาน'],
 ];
 const NAV_ADMIN = [
-  ['#/admin/dashboard', '📊', 'สถิติ'],
-  ['#/admin/bookings', '📝', 'จัดการการจอง', 'pending'],
-  ['#/admin/items', '🧩', 'จัดการหุ่น'],
-  ['#/admin/reports', '🔧', 'รายการแจ้งซ่อม', 'openReports'],
-  ['#/admin/users', '👥', 'ผู้ใช้'],
+  ['#/admin/dashboard', ICONS.dashboard, 'สถิติ'],
+  ['#/admin/bookings', ICONS.manage, 'จัดการการจอง', 'pending'],
+  ['#/admin/items', ICONS.itemsAdmin, 'จัดการหุ่น'],
+  ['#/admin/reports', ICONS.repair, 'รายการแจ้งซ่อม', 'openReports'],
+  ['#/admin/users', ICONS.users, 'ผู้ใช้'],
 ];
 let BADGES = {};
 function renderNav() {
-  const link = ([h, i, t, b]) => `<a href="${h}" class="${location.hash.startsWith(h) ? 'active' : ''}">${i} ${t}${b && BADGES[b] ? ` <span class="badge-n">${BADGES[b]}</span>` : ''}</a>`;
+  const link = ([h, i, t, b]) => `<a href="${h}" class="${location.hash.startsWith(h) ? 'active' : ''}">${i}<span>${t}</span>${b && BADGES[b] ? ` <span class="badge-n">${BADGES[b]}</span>` : ''}</a>`;
   $('#nav').innerHTML = '<div class="nav-label">เมนู</div>' + NAV_USER.map(link).join('')
     + (ME.role === 'admin' ? '<div class="nav-label">ผู้ดูแลระบบ</div>' + NAV_ADMIN.map(link).join('') : '');
 }
@@ -124,7 +151,6 @@ function calendarPicker(container, booked, onChange) {
   let cur = new Date(); cur.setDate(1);
   let start = null, end = null;
   const isBooked = (d) => booked.some((b) => d >= b.start_date && d <= b.end_date);
-  const rangeFree = (a, b) => { for (let d = a; d <= b; d = addDays(d, 1)) if (isBooked(d)) return false; return true; };
   function draw() {
     const y = cur.getFullYear(), mo = cur.getMonth();
     const first = new Date(y, mo, 1).getDay();
@@ -149,10 +175,9 @@ function calendarPicker(container, booked, onChange) {
     const m = e.target.closest('[data-m]');
     if (m) { cur.setMonth(cur.getMonth() + +m.dataset.m); return draw(); }
     const cell = e.target.closest('.d[data-d]');
-    if (!cell || cell.classList.contains('past') || cell.classList.contains('booked')) return;
+    if (!cell || cell.classList.contains('past')) return;
     const d = cell.dataset.d;
     if (!start || end || d < start) { start = d; end = null; }
-    else if (!rangeFree(start, d)) { toast('ช่วงวันที่เลือกมีวันที่ถูกจองแล้ว', 'err'); return; }
     else end = d;
     draw(); onChange(start, end || start);
   });
@@ -179,9 +204,14 @@ async function openBooking(item, { onBehalf = false } = {}) {
       </div><div style="height:12px"></div>` : ''}
     <label>เลือกวันที่ยืม → วันที่คืน บนปฏิทิน</label>
     <div id="cal"></div>
+    ${booked.length ? `<div class="booked-list"><b>ช่วงเวลาที่ถูกจองแล้ว</b>${booked.map((b) => `<div>${fmtD(b.start_date)} ${b.start_time} – ${b.end_date !== b.start_date ? fmtD(b.end_date) + ' ' : ''}${b.end_time} น.</div>`).join('')}</div>` : ''}
     <div class="field-row">
       <div class="field"><label>วันที่ยืม</label><input type="date" id="sd" min="${TODAY()}"></div>
+      <div class="field"><label>เวลายืม</label><input type="time" id="st" value="08:00" step="900"></div>
+    </div>
+    <div class="field-row">
       <div class="field"><label>วันที่คืน</label><input type="date" id="ed" min="${TODAY()}"></div>
+      <div class="field"><label>เวลาคืน</label><input type="time" id="et" value="16:30" step="900"></div>
     </div>
     <div class="field"><label>วัตถุประสงค์ / รายวิชา / สถานที่ใช้</label><textarea id="pp" rows="2" placeholder="เช่น สอน ACLS นักศึกษาแพทย์ปี 4 ห้อง Sim 2"></textarea></div>`,
     `<button class="btn ghost" data-close>ยกเลิก</button><button class="btn" id="ok">${onBehalf ? 'ยืนยันการจองแทนผู้ใช้' : 'ยืนยันการจอง'}</button>`);
@@ -190,7 +220,7 @@ async function openBooking(item, { onBehalf = false } = {}) {
   $('#sd', m).onchange = sync; $('#ed', m).onchange = sync;
   if (onBehalf) $('#uSel', m).onchange = (e) => { $('#newU', m).style.display = e.target.value === 'new' ? 'block' : 'none'; };
   $('#ok', m).onclick = async () => {
-    const body = { item_id: item.id, start_date: $('#sd', m).value, end_date: $('#ed', m).value || $('#sd', m).value, purpose: $('#pp', m).value };
+    const body = { item_id: item.id, start_date: $('#sd', m).value, end_date: $('#ed', m).value || $('#sd', m).value, start_time: $('#st', m).value, end_time: $('#et', m).value, purpose: $('#pp', m).value };
     let url = '/api/bookings';
     if (onBehalf) {
       url = '/api/admin/bookings';
@@ -210,7 +240,7 @@ async function pageItems() {
   view.innerHTML = `
     <div class="page-head"><div><h1>หุ่นและอุปกรณ์ Simulation</h1><p>ตรวจสอบสถานะและจองล่วงหน้าตามช่วงวันที่ต้องการ</p></div></div>
     <div class="toolbar">
-      <div class="grow"><input id="qt" placeholder="🔍 ค้นหาชื่อหรือรหัส เช่น CPR, SimMan" value="${esc(q.text)}"></div>
+      <div class="grow"><input id="qt" placeholder="ค้นหาชื่อหรือรหัส เช่น CPR, SimMan" value="${esc(q.text)}"></div>
       <select id="qc"><option value="">ทุกหมวดหมู่</option>${CATS.map((c) => `<option ${c === q.cat ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
       <input type="date" id="qs" value="${q.start}" min="${TODAY()}" title="ตั้งแต่"><span style="color:var(--muted)">ถึง</span><input type="date" id="qe" value="${q.end}" min="${TODAY()}" title="ถึง">
       <label class="check"><input type="checkbox" id="qf" ${q.onlyFree ? 'checked' : ''}> แสดงเฉพาะที่ว่าง</label>
@@ -223,7 +253,7 @@ async function pageItems() {
     const t = q.text.toLowerCase();
     const list = items.filter((i) => (!q.cat || i.category === q.cat) && (!q.onlyFree || i.available) && (!t || (i.code + ' ' + i.name).toLowerCase().includes(t)));
     const free = items.filter((i) => i.available).length, rep = items.filter((i) => i.status !== 'normal').length;
-    $('#sum').innerHTML = [['🧍', items.length, 'ทั้งหมด'], ['✅', free, `ว่างช่วง ${fmtD(q.start)}${q.end !== q.start ? ' – ' + fmtD(q.end) : ''}`], ['📅', items.length - free - rep, 'ถูกจอง/ยืมอยู่'], ['🛠️', rep, 'ซ่อม / เสีย']]
+    $('#sum').innerHTML = [[ic('items'), items.length, 'ทั้งหมด'], [ic('check'), free, `ว่างช่วง ${fmtD(q.start)}${q.end !== q.start ? ' – ' + fmtD(q.end) : ''}`], [ic('bookings'), items.length - free - rep, 'ถูกจอง/ยืมอยู่'], [ic('report'), rep, 'ซ่อม / เสีย']]
       .map(([i, v, l]) => `<div class="card kpi"><div class="ico">${i}</div><div><div class="v">${v}</div><div class="l">${l}</div></div></div>`).join('');
     $('#list').innerHTML = list.length ? list.map((i) => `
       <div class="card item">
@@ -233,11 +263,11 @@ async function pageItems() {
           <div class="name" title="${esc(i.name)}">${esc(i.name)}</div>
           <div class="cat">${esc(i.category)}</div>
           <div class="actions">
-            <button class="btn sm" data-book="${i.id}" ${i.status !== 'normal' ? 'disabled' : ''}>📅 จอง</button>
+            <button class="btn sm" data-book="${i.id}" ${i.status !== 'normal' ? 'disabled' : ''}>${ic('bookings')} จอง</button>
             <button class="btn ghost sm" data-info="${i.id}">รายละเอียด</button>
           </div>
         </div>
-      </div>`).join('') : '<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div>ไม่พบรายการที่ตรงกับเงื่อนไข</div>';
+      </div>`).join('') : `<div class="empty" style="grid-column:1/-1"><div class="big">${ic('search')}</div>ไม่พบรายการที่ตรงกับเงื่อนไข</div>`;
   };
   $('#qt').oninput = (e) => { q.text = e.target.value; draw(); };
   $('#qc').onchange = (e) => { q.cat = e.target.value; draw(); };
@@ -250,11 +280,11 @@ async function pageItems() {
     if (inf) {
       const it = items.find((i) => i.id == inf.dataset.info);
       const bk = await api(`/api/items/${it.id}/bookings`);
-      modal(esc(it.code), `<div style="text-align:center;background:var(--blue-50);border-radius:12px;margin-bottom:14px">${it.image ? `<img src="${esc(it.image)}" style="max-width:100%;max-height:320px;object-fit:contain">` : '<div class="noimg" style="padding:30px">🧍</div>'}</div>
+      modal(esc(it.code), `<div style="text-align:center;background:var(--blue-50);border-radius:12px;margin-bottom:14px">${it.image ? `<img src="${esc(it.image)}" style="max-width:100%;max-height:320px;object-fit:contain">` : `<div class="noimg" style="padding:30px">${ic('items')}</div>`}</div>
         <h3>${esc(it.name)}</h3><p style="color:var(--muted);margin-top:0">${esc(it.category)} · ${itemPill(it)}</p>
         ${it.description ? `<p>${esc(it.description)}</p>` : ''}
         <h3 style="margin-top:16px">กำหนดการจองที่จะถึง</h3>
-        ${bk.length ? bk.map((b) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line)"><span>${fmtD(b.start_date)} – ${fmtD(b.end_date)}</span>${pill(BK, b.status)}</div>`).join('') : '<p style="color:var(--muted)">ยังไม่มีการจอง</p>'}`);
+        ${bk.length ? bk.map((b) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line)"><span>${fmtD(b.start_date)} ${b.start_time} – ${fmtD(b.end_date)} ${b.end_time} น.</span>${pill(BK, b.status)}</div>`).join('') : '<p style="color:var(--muted)">ยังไม่มีการจอง</p>'}`);
     }
   };
   await load();
@@ -265,10 +295,10 @@ async function pageMyBookings() {
   view.innerHTML = `<div class="page-head"><div><h1>การจองของฉัน</h1><p>ติดตามสถานะคำขอยืมและกำหนดคืน</p></div><a class="btn" href="#/items">+ จองหุ่นเพิ่ม</a></div>
     <div class="card"><div class="table-wrap">${rows.length ? `<table><thead><tr><th></th><th>หุ่น/อุปกรณ์</th><th>วันที่ยืม</th><th>วันที่คืน</th><th>วัตถุประสงค์</th><th>สถานะ</th><th></th></tr></thead><tbody>
     ${rows.map((b) => `<tr><td>${img(b.item_image, 'mini-thumb')}</td><td><b>${esc(b.item_code)}</b><div class="sub">${esc(b.item_name)}</div></td>
-      <td>${fmtD(b.start_date)}</td><td>${fmtD(b.end_date)}${b.status === 'borrowed' && b.end_date < TODAY() ? ' <span class="pill repair">เลยกำหนด</span>' : ''}</td>
+      <td>${fmtD(b.start_date)}<div class="sub">${b.start_time} น.</div></td><td>${fmtD(b.end_date)}<div class="sub">${b.end_time} น.</div>${b.status === 'borrowed' && b.end_date < TODAY() ? ' <span class="pill repair">เลยกำหนด</span>' : ''}</td>
       <td class="sub">${esc(b.purpose || '-')}${b.created_by !== b.user_id ? `<div>จองโดย ${esc(b.created_by_name)}</div>` : ''}</td><td>${pill(BK, b.status)}</td>
       <td>${['pending', 'approved'].includes(b.status) ? `<button class="btn ghost sm" data-c="${b.id}">ยกเลิก</button>` : ''}</td></tr>`).join('')}
-    </tbody></table>` : '<div class="empty"><div class="big">📅</div>ยังไม่มีการจอง<br><a href="#/items">ไปเลือกหุ่นที่ต้องการ</a></div>'}</div></div>`;
+    </tbody></table>` : `<div class="empty"><div class="big">${ic('bookings')}</div>ยังไม่มีการจอง<br><a href="#/items">ไปเลือกหุ่นที่ต้องการ</a></div>`}</div></div>`;
   view.onclick = async (e) => {
     const c = e.target.closest('[data-c]');
     if (c && await confirmBox('ต้องการยกเลิกการจองนี้?')) { await run(() => api(`/api/bookings/${c.dataset.c}/cancel`, { method: 'POST' }), 'ยกเลิกแล้ว'); refreshMe(); route(); }
@@ -282,14 +312,14 @@ async function pageReport() {
       <div class="card"><h2>แจ้งปัญหาใหม่</h2>
         <div class="field"><label>หุ่น/อุปกรณ์</label><input id="rs" list="rl" placeholder="พิมพ์รหัสหรือชื่อเพื่อค้นหา"><datalist id="rl">${items.map((i) => `<option value="${esc(i.code)} — ${esc(i.name)}">`).join('')}</datalist></div>
         <div class="field"><label>อาการ / ปัญหาที่พบ</label><textarea id="rd" rows="5" placeholder="เช่น ปอดซ้ายไม่ขยายเมื่อช่วยหายใจ, ผิวหนังบริเวณแขนฉีกขาด"></textarea></div>
-        <button class="btn" id="rsend">📨 ส่งเรื่องถึง Admin</button>
+        <button class="btn" id="rsend">${ic('send')} ส่งเรื่องถึง Admin</button>
       </div>
       <div class="card"><h2>เรื่องที่ฉันแจ้ง</h2>
         ${mine.length ? mine.map((r) => `<div style="padding:10px 0;border-bottom:1px solid var(--line)">
           <div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(r.item_code)}</b>${pill(RP, r.status)}</div>
           <div class="sub" style="color:var(--muted);font-size:.84rem">${esc(r.item_name)} · ${fmtD(r.created_at)}</div>
           <div style="margin-top:4px">${esc(r.detail)}</div>
-          ${r.admin_note ? `<div style="margin-top:6px;background:var(--blue-50);padding:8px 10px;border-radius:8px;font-size:.88rem">💬 Admin: ${esc(r.admin_note)}</div>` : ''}
+          ${r.admin_note ? `<div style="margin-top:6px;background:var(--blue-50);padding:8px 10px;border-radius:8px;font-size:.88rem">${ic('chat')} Admin: ${esc(r.admin_note)}</div>` : ''}
         </div>`).join('') : '<div class="empty">ยังไม่มีการแจ้ง</div>'}
       </div>
     </div>`;
@@ -304,27 +334,27 @@ async function pageReport() {
 function pageGuide() {
   const sec = (icon, title, steps) => `<div class="card guide-section"><h2>${icon} ${title}</h2><div class="steps">${steps.map(([h, p]) => `<div class="step"><div class="n"></div><div><b>${h}</b><p>${p}</p></div></div>`).join('')}</div></div>`;
   view.innerHTML = `<div class="page-head"><div><h1>คู่มือการใช้งาน</h1><p>ขั้นตอนการใช้ CMEC E-Borrow App</p></div></div>
-    ${sec('🔍', 'ดูหุ่นที่ว่าง', [
+    ${sec(ic('search'), 'ดูหุ่นที่ว่าง', [
       ['ไปที่เมนู "หุ่นและอุปกรณ์"', 'จะเห็นรายการหุ่นทั้งหมดพร้อมรูปและสถานะ'],
       ['เลือกช่วงวันที่ที่ต้องการใช้', 'ระบบจะคำนวณว่าหุ่นตัวใดว่างในช่วงวันที่นั้น'],
       ['ค้นหา / กรองหมวดหมู่', 'ติ๊ก "แสดงเฉพาะที่ว่าง" เพื่อดูเฉพาะหุ่นที่พร้อมให้ยืม']])}
-    ${sec('📅', 'จองล่วงหน้า', [
+    ${sec(ic('bookings'), 'จองล่วงหน้า', [
       ['กดปุ่ม "จอง" ที่หุ่นที่ต้องการ', 'จะมีปฏิทินแสดงวันที่ถูกจองแล้ว (สีแดง)'],
       ['คลิกวันที่ยืม แล้วคลิกวันที่คืน', 'หรือเลือกจากช่องวันที่ด้านล่าง ระบบไม่ให้เลือกช่วงที่ชนกับการจองอื่น'],
       ['ระบุวัตถุประสงค์และกด "ยืนยันการจอง"', 'การจองสำเร็จทันที ไม่ต้องรออนุมัติ'],
       ['ติดตามที่เมนู "การจองของฉัน"', 'ยกเลิกได้ระหว่างที่ยังไม่ได้รับของ']])}
-    ${sec('📦', 'รับและคืนหุ่น', [
+    ${sec(ic('box'), 'รับและคืนหุ่น', [
       ['มารับหุ่นที่ศูนย์ CMEC ตามวันที่จอง', 'เจ้าหน้าที่จะบันทึกสถานะเป็น "กำลังยืม"'],
       ['ตรวจสภาพหุ่นก่อนใช้งาน', 'หากพบความผิดปกติให้แจ้งทันที'],
       ['คืนหุ่นภายในวันที่กำหนด', 'เจ้าหน้าที่จะบันทึก "คืนแล้ว"']])}
-    ${sec('🛠️', 'แจ้งหุ่นเสีย / ซ่อม', [
+    ${sec(ic('report'), 'แจ้งหุ่นเสีย / ซ่อม', [
       ['ไปที่เมนู "แจ้งซ่อม"', 'พิมพ์รหัสหรือชื่อหุ่นแล้วเลือกจากรายการ'],
       ['อธิบายอาการที่พบ', 'ยิ่งละเอียดยิ่งช่วยให้ซ่อมได้เร็ว'],
       ['ติดตามสถานะได้ทางขวามือ', 'Admin จะอัปเดตสถานะและหมายเหตุการซ่อม']])}
-    ${sec('👤', 'บัญชีผู้ใช้', [
+    ${sec(ic('user'), 'บัญชีผู้ใช้', [
       ['คลิกชื่อของคุณมุมขวาบน', 'ดูสถานะบัญชี หน่วยงาน จำนวนการจองที่ใช้งานอยู่'],
       ['เปลี่ยนรหัสผ่าน / ออกจากระบบ', 'แนะนำให้เปลี่ยนรหัสผ่านเมื่อเข้าใช้ครั้งแรก']])}
-    ${ME.role === 'admin' ? sec('🛡️', 'สำหรับผู้ดูแลระบบ', [
+    ${ME.role === 'admin' ? sec(ic('shield'), 'สำหรับผู้ดูแลระบบ', [
       ['จัดการการจอง', 'บันทึกรับของ → บันทึกคืน (นับสถิติเมื่อบันทึกรับของ) หรือยกเลิกการจอง'],
       ['จองแทนผู้ใช้', 'ปุ่ม "+ จองแทนผู้ใช้" เลือกผู้ใช้เดิมหรือสร้างผู้ยืมใหม่'],
       ['จัดการหุ่น', 'เพิ่ม แก้ไข ลบ อัปโหลดรูป และสลับสถานะ ปกติ / อยู่ระหว่างซ่อม / หุ่นเสีย (หุ่นที่ซ่อมหรือเสียจะจองไม่ได้)'],
@@ -339,11 +369,11 @@ async function pageAdminDashboard() {
   view.innerHTML = `<div class="page-head"><div><h1>สถิติการใช้งาน</h1><p>นับจำนวนครั้งที่ยืมจริง (บันทึกรับของ) — เริ่มนับใหม่ทุกต้นเดือน</p></div>
     <select id="mSel" style="width:auto">${s.months.map((m) => `<option value="${m}" ${m === s.month ? 'selected' : ''}>${fmtMonth(m)}</option>`).join('')}</select></div>
     <div class="grid kpis">
-      ${[['📈', s.total, `ครั้งที่ยืม (${fmtMonth(s.month)})`], ['📦', s.borrowedNow, 'กำลังถูกยืมอยู่'], ['⏳', s.pending, 'คำขอรออนุมัติ'], ['🛠️', s.repair, `อยู่ระหว่างซ่อม / ${s.items} ทั้งหมด`], ['❌', s.broken, 'หุ่นเสีย'], ['🔔', s.openReports, 'เรื่องแจ้งซ่อมค้าง']]
+      ${[[ic('trend'), s.total, `ครั้งที่ยืม (${fmtMonth(s.month)})`], [ic('box'), s.borrowedNow, 'กำลังถูกยืมอยู่'], [ic('clock'), s.pending, 'คำขอรออนุมัติ'], [ic('repair'), s.repair, `อยู่ระหว่างซ่อม / ${s.items} ทั้งหมด`], [ic('x'), s.broken, 'หุ่นเสีย'], [ic('bell'), s.openReports, 'เรื่องแจ้งซ่อมค้าง']]
       .map(([i, v, l]) => `<div class="card kpi"><div class="ico">${i}</div><div><div class="v">${v}</div><div class="l">${l}</div></div></div>`).join('')}
     </div>
     <div class="grid two-col">
-      <div class="card"><h2>หุ่นที่ถูกยืมมากที่สุด (Top 10)</h2>${s.top.length ? '<div style="height:340px"><canvas id="c1"></canvas></div>' : '<div class="empty"><div class="big">📊</div>ยังไม่มีการยืมในเดือนนี้</div>'}</div>
+      <div class="card"><h2>หุ่นที่ถูกยืมมากที่สุด (Top 10)</h2>${s.top.length ? '<div style="height:340px"><canvas id="c1"></canvas></div>' : `<div class="empty"><div class="big">${ic('dashboard')}</div>ยังไม่มีการยืมในเดือนนี้</div>`}</div>
       <div class="card"><h2>แยกตามหมวดหมู่</h2>${s.byCategory.length ? '<div style="height:340px"><canvas id="c2"></canvas></div>' : '<div class="empty">—</div>'}</div>
     </div>`;
   $('#mSel').onchange = (e) => { pageAdminDashboard.month = e.target.value; route(); };
@@ -367,7 +397,7 @@ async function pageAdminBookings() {
     <div class="card"><div class="table-wrap">${rows.length ? `<table><thead><tr><th>#</th><th>หุ่น/อุปกรณ์</th><th>ผู้ยืม</th><th>ช่วงวันที่</th><th>วัตถุประสงค์</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>
       ${rows.map((b) => `<tr><td class="sub">${b.id}</td><td><b>${esc(b.item_code)}</b><div class="sub">${esc(b.item_name)}</div></td>
         <td>${esc(b.user_name)}<div class="sub">${esc(b.user_department || '')} ${esc(b.user_phone || '')}</div></td>
-        <td>${fmtD(b.start_date)} – ${fmtD(b.end_date)}${b.status === 'borrowed' && b.end_date < TODAY() ? '<div><span class="pill repair">เลยกำหนดคืน</span></div>' : ''}</td>
+        <td>${fmtD(b.start_date)} ${b.start_time} – ${fmtD(b.end_date)} ${b.end_time} น.${b.status === 'borrowed' && b.end_date < TODAY() ? '<div><span class="pill repair">เลยกำหนดคืน</span></div>' : ''}</td>
         <td class="sub">${esc(b.purpose || '-')}${b.created_by !== b.user_id ? `<div>จองโดย ${esc(b.created_by_name)}</div>` : ''}</td>
         <td>${pill(BK, b.status)}</td>
         <td><div class="acts">${{
@@ -375,7 +405,7 @@ async function pageAdminBookings() {
           approved: `<button class="btn sm" data-s="borrowed" data-id="${b.id}">บันทึกรับของ</button><button class="btn ghost sm" data-s="cancelled" data-id="${b.id}">ยกเลิก</button>`,
           borrowed: `<button class="btn success sm" data-s="returned" data-id="${b.id}">บันทึกคืน</button>`,
         }[b.status] || ''}</div></td></tr>`).join('')}
-      </tbody></table>` : '<div class="empty"><div class="big">📭</div>ไม่มีรายการ</div>'}</div></div>`;
+      </tbody></table>` : `<div class="empty"><div class="big">${ic('inbox')}</div>ไม่มีรายการ</div>`}</div></div>`;
   view.onclick = async (e) => {
     const t = e.target.closest('[data-t]');
     if (t) { pageAdminBookings.status = t.dataset.t; return route(); }
@@ -383,7 +413,7 @@ async function pageAdminBookings() {
     if (s) { if (await run(() => api(`/api/admin/bookings/${s.dataset.id}`, { method: 'PATCH', body: { status: s.dataset.s } }), 'อัปเดตแล้ว')) { refreshMe(); route(); } }
     if (e.target.closest('#behalf')) {
       const items = (await api('/api/items')).filter((i) => i.status === 'normal');
-      const m = modal('จองแทนผู้ใช้ — เลือกหุ่น', `<input id="fs" placeholder="🔍 ค้นหา" style="margin-bottom:10px"><div id="fl" style="max-height:50vh;overflow:auto"></div>`);
+      const m = modal('จองแทนผู้ใช้ — เลือกหุ่น', `<input id="fs" placeholder="ค้นหา" style="margin-bottom:10px"><div id="fl" style="max-height:50vh;overflow:auto"></div>`);
       const draw = () => {
         const t2 = $('#fs', m).value.toLowerCase();
         $('#fl', m).innerHTML = items.filter((i) => (i.code + i.name).toLowerCase().includes(t2)).map((i) =>
@@ -398,18 +428,29 @@ async function pageAdminBookings() {
 async function pageAdminItems() {
   const items = await api('/api/items');
   const q = pageAdminItems.q || '';
+  const cats = [...new Set([...CATS, ...items.map((i) => i.category)])].filter((c) => items.some((i) => i.category === c));
+  if (pageAdminItems.cat && !cats.includes(pageAdminItems.cat)) pageAdminItems.cat = '';
   view.innerHTML = `<div class="page-head"><div><h1>จัดการหุ่นและอุปกรณ์</h1><p>เพิ่ม แก้ไข ลบ และกำหนดสถานะ ปกติ / อยู่ระหว่างซ่อม / หุ่นเสีย</p></div><button class="btn" id="add">+ เพิ่มหุ่นใหม่</button></div>
-    <div class="toolbar"><div class="grow"><input id="q" placeholder="🔍 ค้นหารหัส/ชื่อ" value="${esc(q)}"></div></div>
+    <div class="toolbar"><div class="grow"><input id="q" placeholder="ค้นหารหัส/ชื่อ" value="${esc(q)}"></div></div>
+    <div class="cat-tabs" id="ct"></div>
     <div class="card"><div class="table-wrap"><table><thead><tr><th></th><th>รหัส</th><th>ชื่อ</th><th>หมวดหมู่</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody id="tb"></tbody></table></div></div>`;
   const draw = () => {
     const t = $('#q').value.toLowerCase(); pageAdminItems.q = $('#q').value;
-    $('#tb').innerHTML = items.filter((i) => (i.code + ' ' + i.name).toLowerCase().includes(t)).map((i) => `<tr>
+    const cur = pageAdminItems.cat || '';
+    const match = items.filter((i) => (i.code + ' ' + i.name).toLowerCase().includes(t));
+    $('#ct').innerHTML = [['', 'ทั้งหมด', match.length], ...cats.map((c) => [c, c, match.filter((i) => i.category === c).length])]
+      .map(([v, l, n]) => `<button type="button" class="cat-tab ${v === cur ? 'on' : ''}" data-cat="${esc(v)}">${esc(l)} <span>${n}</span></button>`).join('');
+    const row = (i) => `<tr>
       <td>${img(i.image, 'mini-thumb')}</td><td><b>${esc(i.code)}</b></td><td>${esc(i.name)}</td><td class="sub">${esc(i.category)}</td>
       <td><select data-st="${i.id}" style="width:auto;padding:5px 8px;font-size:.85rem;color:${IST[i.status][2]};border-color:${i.status === 'normal' ? 'var(--line)' : IST[i.status][2]}">
         ${statusOptions(i.status)}</select></td>
-      <td><div class="acts"><button class="btn ghost sm" data-ed="${i.id}">แก้ไข</button><button class="btn danger sm" data-del="${i.id}">ลบ</button></div></td></tr>`).join('');
+      <td><div class="acts"><button class="btn ghost sm" data-ed="${i.id}">แก้ไข</button><button class="btn danger sm" data-del="${i.id}">ลบ</button></div></td></tr>`;
+    const groups = (cur ? [cur] : cats).map((c) => [c, match.filter((i) => i.category === c)]).filter(([, l]) => l.length);
+    $('#tb').innerHTML = groups.length ? groups.map(([c, l]) => `<tr class="cat-row"><td colspan="6">${esc(c)} <span>${l.length} รายการ</span></td></tr>${l.map(row).join('')}`).join('')
+      : '<tr><td colspan="6" class="sub" style="text-align:center;padding:30px">ไม่พบรายการ</td></tr>';
   };
   $('#q').oninput = draw; draw();
+  $('#ct').onclick = (e) => { const b = e.target.closest('[data-cat]'); if (b) { pageAdminItems.cat = b.dataset.cat; draw(); } };
   const form = (it = {}) => {
     const m = modal(it.id ? 'แก้ไขข้อมูลหุ่น' : 'เพิ่มหุ่นใหม่', `<form id="itf">
       <div class="field-row"><div class="field"><label>รหัส *</label><input name="code" value="${esc(it.code || '')}" required></div>
@@ -446,17 +487,17 @@ async function pageAdminReports() {
   view.innerHTML = `<div class="page-head"><div><h1>รายการแจ้งซ่อม</h1><p>เรื่องที่ผู้ใช้แจ้งเข้ามา</p></div></div>
     <div class="card"><div class="table-wrap">${rows.length ? `<table><thead><tr><th>วันที่</th><th>หุ่น</th><th>ผู้แจ้ง</th><th>อาการ</th><th>สถานะเรื่อง</th><th>สถานะหุ่น</th><th></th></tr></thead><tbody>
       ${rows.map((r) => `<tr><td class="sub">${fmtD(r.created_at)}</td><td><b>${esc(r.item_code)}</b><div class="sub">${esc(r.item_name)}</div></td>
-        <td>${esc(r.user_name)}<div class="sub">${esc(r.user_department || '')}</div></td><td>${esc(r.detail)}${r.admin_note ? `<div class="sub">💬 ${esc(r.admin_note)}</div>` : ''}</td>
+        <td>${esc(r.user_name)}<div class="sub">${esc(r.user_department || '')}</div></td><td>${esc(r.detail)}${r.admin_note ? `<div class="sub">${ic('chat')} ${esc(r.admin_note)}</div>` : ''}</td>
         <td>${pill(RP, r.status)}</td><td>${itemPill({ status: r.item_status, available: true })}</td>
         <td><button class="btn sm" data-r="${r.id}">อัปเดต</button></td></tr>`).join('')}
-      </tbody></table>` : '<div class="empty"><div class="big">🎉</div>ไม่มีเรื่องแจ้งซ่อม</div>'}</div></div>`;
+      </tbody></table>` : `<div class="empty"><div class="big">${ic('party')}</div>ไม่มีเรื่องแจ้งซ่อม</div>`}</div></div>`;
   view.onclick = (e) => {
     const b = e.target.closest('[data-r]'); if (!b) return;
     const r = rows.find((x) => x.id == b.dataset.r);
     const m = modal('อัปเดตเรื่องแจ้งซ่อม', `<p><b>${esc(r.item_code)}</b> ${esc(r.item_name)}<br><span style="color:var(--muted)">${esc(r.detail)}</span></p>
       <div class="field"><label>สถานะเรื่อง</label><select id="rs">${Object.entries(RP).map(([k, v]) => `<option value="${k}" ${k === r.status ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></div>
       <div class="field"><label>หมายเหตุถึงผู้แจ้ง</label><textarea id="rn" rows="3">${esc(r.admin_note || '')}</textarea></div>
-      <div class="field"><label>สถานะหุ่น</label><select id="is">${statusOptions(r.item_status, { normal: '✅ ปกติ (ให้ยืมได้)', repair: '🛠️ อยู่ระหว่างซ่อม (ปิดการจอง)', broken: '❌ หุ่นเสีย (ปิดการจอง)' })}</select></div>`,
+      <div class="field"><label>สถานะหุ่น</label><select id="is">${statusOptions(r.item_status, { normal: 'ปกติ (ให้ยืมได้)', repair: 'อยู่ระหว่างซ่อม (ปิดการจอง)', broken: 'หุ่นเสีย (ปิดการจอง)' })}</select></div>`,
       '<button class="btn ghost" data-close>ยกเลิก</button><button class="btn" id="sv">บันทึก</button>');
     $('#sv', m).onclick = async () => {
       const ok = await run(async () => {
@@ -510,7 +551,7 @@ async function route() {
   document.querySelectorAll('.modal-bg').forEach((m) => m.remove());
   setSidebar(false);
   renderNav();
-  try { await fn(); } catch (e) { view.innerHTML = `<div class="empty"><div class="big">⚠️</div>${esc(e.message)}</div>`; }
+  try { await fn(); } catch (e) { view.innerHTML = `<div class="empty"><div class="big">${ic('warn')}</div>${esc(e.message)}</div>`; }
 }
 window.addEventListener('hashchange', route);
 

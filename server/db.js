@@ -86,6 +86,14 @@ if (!itemsSql.includes("'broken'")) {
   console.log('Migrated items table: added status "broken"');
 }
 
+// Migration: booking times (HH:MM). Older bookings default to a full working day.
+const bookingCols = db.prepare("PRAGMA table_info(bookings)").all().map((c) => c.name);
+if (!bookingCols.includes('start_time')) {
+  db.exec("ALTER TABLE bookings ADD COLUMN start_time TEXT NOT NULL DEFAULT '08:00'");
+  db.exec("ALTER TABLE bookings ADD COLUMN end_time TEXT NOT NULL DEFAULT '16:30'");
+  console.log('Migrated bookings table: added start_time/end_time');
+}
+
 const CATEGORY_BY_PREFIX = {
   A: 'ทางเดินหายใจ',
   C: 'หลอดเลือด',
