@@ -511,11 +511,11 @@ async function pageAdminReports() {
 
 async function pageAdminUsers() {
   const users = await api('/api/admin/users');
-  view.innerHTML = `<div class="page-head"><div><h1>ผู้ใช้งาน</h1><p>สร้างบัญชีและเปิด/ปิดการใช้งาน</p></div><button class="btn" id="add">+ เพิ่มผู้ใช้</button></div>
+  view.innerHTML = `<div class="page-head"><div><h1>ผู้ใช้งาน</h1><p>สร้างบัญชี เปิด/ปิดการใช้งาน และลบบัญชี</p></div><button class="btn" id="add">+ เพิ่มผู้ใช้</button></div>
     <div class="card"><div class="table-wrap"><table><thead><tr><th>ชื่อ</th><th>ชื่อผู้ใช้</th><th>หน่วยงาน</th><th>เบอร์โทร</th><th>สิทธิ์</th><th>สถานะ</th><th></th></tr></thead><tbody>
     ${users.map((u) => `<tr><td><b>${esc(u.name)}</b></td><td>@${esc(u.username)}</td><td>${esc(u.department || '-')}</td><td>${esc(u.phone || '-')}</td>
       <td>${u.role === 'admin' ? '<span class="pill info">Admin</span>' : 'ผู้ใช้'}</td><td>${u.active ? '<span class="pill ok">ใช้งาน</span>' : '<span class="pill gray">ปิดใช้งาน</span>'}</td>
-      <td><div class="acts"><button class="btn ghost sm" data-pw="${u.id}">ตั้งรหัสใหม่</button>${u.id !== ME.id ? `<button class="btn ${u.active ? 'danger' : 'success'} sm" data-act="${u.id}" data-v="${u.active ? 0 : 1}">${u.active ? 'ปิด' : 'เปิด'}</button>` : ''}</div></td></tr>`).join('')}
+      <td><div class="acts"><button class="btn ghost sm" data-pw="${u.id}">ตั้งรหัสใหม่</button>${u.id !== ME.id ? `<button class="btn ${u.active ? 'danger' : 'success'} sm" data-act="${u.id}" data-v="${u.active ? 0 : 1}">${u.active ? 'ปิด' : 'เปิด'}</button><button class="btn danger sm" data-deluser="${u.id}">ลบ</button>` : ''}</div></td></tr>`).join('')}
     </tbody></table></div></div>`;
   $('#add').onclick = () => {
     const m = modal('เพิ่มผู้ใช้', `<div class="field-row"><div class="field"><label>ชื่อ-นามสกุล *</label><input id="n"></div><div class="field"><label>ชื่อผู้ใช้ *</label><input id="u"></div></div>
@@ -528,7 +528,13 @@ async function pageAdminUsers() {
     };
   };
   view.onclick = async (e) => {
-    const a = e.target.closest('[data-act]'), p = e.target.closest('[data-pw]');
+    const a = e.target.closest('[data-act]'), p = e.target.closest('[data-pw]'), d = e.target.closest('[data-deluser]');
+    if (d) {
+      const u = users.find((x) => x.id === Number(d.dataset.deluser));
+      if (await confirmBox(`ลบบัญชี <b>${esc(u.name)}</b> (@${esc(u.username)})?<br><small style="color:var(--red)">การจองและการแจ้งซ่อมของผู้ใช้นี้จะถูกลบด้วย และกู้คืนไม่ได้ (ถ้าแค่ไม่ให้เข้าระบบ ให้กด "ปิด" แทน)</small>`)
+        && await run(() => api(`/api/admin/users/${u.id}`, { method: 'DELETE' }), 'ลบผู้ใช้แล้ว')) route();
+      return;
+    }
     if (a && await run(() => api(`/api/admin/users/${a.dataset.act}`, { method: 'PATCH', body: { active: a.dataset.v === '1' } }), 'อัปเดตแล้ว')) route();
     if (p) {
       const m = modal('ตั้งรหัสผ่านใหม่', '<div class="field"><label>รหัสผ่านใหม่ (อย่างน้อย 6 ตัว)</label><input id="w"></div>', '<button class="btn ghost" data-close>ยกเลิก</button><button class="btn" id="sv">บันทึก</button>');

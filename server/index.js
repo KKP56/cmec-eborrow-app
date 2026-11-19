@@ -262,6 +262,22 @@ app.patch('/api/admin/users/:id', requireAdmin, (req, res) => {
   }
   res.json({ ok: true });
 });
+app.delete('/api/admin/users/:id', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  if (id === req.user.id) return bad(res, 'ลบบัญชีตัวเองไม่ได้');
+  const u = db.prepare('SELECT role FROM users WHERE id=?').get(id);
+  if (!u) return bad(res, 'ไม่พบผู้ใช้นี้');
+  if (u.role === 'admin' && db.prepare("SELECT COUNT(*) c FROM users WHERE role='admin'").get().c <= 1)
+    return bad(res, 'ต้องมี Admin อย่างน้อย 1 บัญชี');
+  db.exec('BEGIN');
+  try {
+    // bookings this user made on behalf of others stay; just unlink the creator
+    db.prepare('UPDATE bookings SET created_by=NULL WHERE created_by=?').run(id);
+    db.prepare('DELETE FROM users WHERE id=?').run(id); // own bookings/reports cascade
+    db.exec('COMMIT');
+  } catch (e) { db.exec('ROLLBACK'); throw e; }
+  res.json({ ok: true });
+});
 
 // ---------- Static ----------
 app.use('/pic', express.static(path.join(ROOT, 'pic')));
