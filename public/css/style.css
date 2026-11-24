@@ -78,6 +78,7 @@ input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var
 input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,91,184,.15); }
 .toolbar input, .toolbar select { width: auto; }
 .toolbar .grow input { width: 100%; }
+.toolbar .range { display: inline-flex; gap: 6px; align-items: center; }
 label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 4px; }
 .field { margin-bottom: 14px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

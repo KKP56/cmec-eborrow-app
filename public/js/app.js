@@ -185,7 +185,7 @@ function calendarPicker(container, booked, onChange) {
   return { set(s, e2) { start = s; end = e2; if (s) { const d = new Date(s + 'T00:00'); cur = new Date(d.getFullYear(), d.getMonth(), 1); } draw(); } };
 }
 
-async function openBooking(item, { onBehalf = false } = {}) {
+async function openBooking(item, { onBehalf = false, range } = {}) {
   const booked = await api(`/api/items/${item.id}/bookings`);
   let users = [];
   if (onBehalf) users = (await api('/api/admin/users')).filter((u) => u.active);
@@ -207,17 +207,18 @@ async function openBooking(item, { onBehalf = false } = {}) {
     ${booked.length ? `<div class="booked-list"><b>ช่วงเวลาที่ถูกจองแล้ว</b>${booked.map((b) => `<div>${fmtD(b.start_date)} ${b.start_time} – ${b.end_date !== b.start_date ? fmtD(b.end_date) + ' ' : ''}${b.end_time} น.</div>`).join('')}</div>` : ''}
     <div class="field-row">
       <div class="field"><label>วันที่ยืม</label><input type="date" id="sd" min="${TODAY()}"></div>
-      <div class="field"><label>เวลายืม</label><input type="time" id="st" value="08:00" step="900"></div>
+      <div class="field"><label>เวลายืม</label><input type="time" id="st" value="${range?.startTime || '08:00'}" step="900"></div>
     </div>
     <div class="field-row">
       <div class="field"><label>วันที่คืน</label><input type="date" id="ed" min="${TODAY()}"></div>
-      <div class="field"><label>เวลาคืน</label><input type="time" id="et" value="16:30" step="900"></div>
+      <div class="field"><label>เวลาคืน</label><input type="time" id="et" value="${range?.endTime || '16:30'}" step="900"></div>
     </div>
     <div class="field"><label>วัตถุประสงค์ / รายวิชา / สถานที่ใช้</label><textarea id="pp" rows="2" placeholder="เช่น สอน ACLS นักศึกษาแพทย์ปี 4 ห้อง Sim 2"></textarea></div>`,
     `<button class="btn ghost" data-close>ยกเลิก</button><button class="btn" id="ok">${onBehalf ? 'ยืนยันการจองแทนผู้ใช้' : 'ยืนยันการจอง'}</button>`);
   const cal = calendarPicker($('#cal', m), booked, (s, e) => { $('#sd', m).value = s; $('#ed', m).value = e; });
   const sync = () => cal.set($('#sd', m).value, $('#ed', m).value || $('#sd', m).value);
   $('#sd', m).onchange = sync; $('#ed', m).onchange = sync;
+  if (range) { $('#sd', m).value = range.start; $('#ed', m).value = range.end; sync(); }
   if (onBehalf) $('#uSel', m).onchange = (e) => { $('#newU', m).style.display = e.target.value === 'new' ? 'block' : 'none'; };
   $('#ok', m).onclick = async () => {
     const body = { item_id: item.id, start_date: $('#sd', m).value, end_date: $('#ed', m).value || $('#sd', m).value, start_time: $('#st', m).value, end_time: $('#et', m).value, purpose: $('#pp', m).value };
@@ -236,24 +237,25 @@ async function openBooking(item, { onBehalf = false } = {}) {
 
 // ---------- Pages ----------
 async function pageItems() {
-  const q = pageItems.state || (pageItems.state = { text: '', cat: '', onlyFree: false, start: TODAY(), end: TODAY() });
+  const q = pageItems.state || (pageItems.state = { text: '', cat: '', onlyFree: false, start: TODAY(), end: TODAY(), startTime: '08:00', endTime: '16:30' });
   view.innerHTML = `
-    <div class="page-head"><div><h1>หุ่นและอุปกรณ์ Simulation</h1><p>ตรวจสอบสถานะและจองล่วงหน้าตามช่วงวันที่ต้องการ</p></div></div>
+    <div class="page-head"><div><h1>หุ่นและอุปกรณ์ Simulation</h1><p>ตรวจสอบสถานะและจองล่วงหน้าตามช่วงวันและเวลาที่ต้องการ</p></div></div>
     <div class="toolbar">
       <div class="grow"><input id="qt" placeholder="ค้นหาชื่อหรือรหัส เช่น CPR, SimMan" value="${esc(q.text)}"></div>
       <select id="qc"><option value="">ทุกหมวดหมู่</option>${CATS.map((c) => `<option ${c === q.cat ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
-      <input type="date" id="qs" value="${q.start}" min="${TODAY()}" title="ตั้งแต่"><span style="color:var(--muted)">ถึง</span><input type="date" id="qe" value="${q.end}" min="${TODAY()}" title="ถึง">
+      <span class="range"><input type="date" id="qs" value="${q.start}" min="${TODAY()}" title="วันที่เริ่ม"><input type="time" id="qst" value="${q.startTime}" step="900" title="เวลาเริ่ม"></span>
+      <span class="range"><span style="color:var(--muted)">ถึง</span><input type="date" id="qe" value="${q.end}" min="${TODAY()}" title="วันที่สิ้นสุด"><input type="time" id="qet" value="${q.endTime}" step="900" title="เวลาสิ้นสุด"></span>
       <label class="check"><input type="checkbox" id="qf" ${q.onlyFree ? 'checked' : ''}> แสดงเฉพาะที่ว่าง</label>
     </div>
     <div class="grid kpis" id="sum"></div>
     <div class="grid items-grid" id="list"><div class="empty">กำลังโหลด...</div></div>`;
   let items = [];
-  const load = async () => { items = await api(`/api/items?start=${q.start}&end=${q.end}`); draw(); };
+  const load = async () => { items = await api(`/api/items?start=${q.start}&end=${q.end}&startTime=${q.startTime}&endTime=${q.endTime}`); draw(); };
   const draw = () => {
     const t = q.text.toLowerCase();
     const list = items.filter((i) => (!q.cat || i.category === q.cat) && (!q.onlyFree || i.available) && (!t || (i.code + ' ' + i.name).toLowerCase().includes(t)));
     const free = items.filter((i) => i.available).length, rep = items.filter((i) => i.status !== 'normal').length;
-    $('#sum').innerHTML = [[ic('items'), items.length, 'ทั้งหมด'], [ic('check'), free, `ว่างช่วง ${fmtD(q.start)}${q.end !== q.start ? ' – ' + fmtD(q.end) : ''}`], [ic('bookings'), items.length - free - rep, 'ถูกจอง/ยืมอยู่'], [ic('report'), rep, 'ซ่อม / เสีย']]
+    $('#sum').innerHTML = [[ic('items'), items.length, 'ทั้งหมด'], [ic('check'), free, `ว่าง ${fmtD(q.start)} ${q.startTime} – ${q.end !== q.start ? fmtD(q.end) + ' ' : ''}${q.endTime} น.`], [ic('bookings'), items.length - free - rep, 'ถูกจอง/ยืมอยู่'], [ic('report'), rep, 'ซ่อม / เสีย']]
       .map(([i, v, l]) => `<div class="card kpi"><div class="ico">${i}</div><div><div class="v">${v}</div><div class="l">${l}</div></div></div>`).join('');
     $('#list').innerHTML = list.length ? list.map((i) => `
       <div class="card item">
@@ -274,9 +276,11 @@ async function pageItems() {
   $('#qf').onchange = (e) => { q.onlyFree = e.target.checked; draw(); };
   $('#qs').onchange = (e) => { q.start = e.target.value || TODAY(); if (q.end < q.start) { q.end = q.start; $('#qe').value = q.end; } load(); };
   $('#qe').onchange = (e) => { q.end = e.target.value < q.start ? q.start : e.target.value; e.target.value = q.end; load(); };
+  $('#qst').onchange = (e) => { q.startTime = e.target.value || '08:00'; load(); };
+  $('#qet').onchange = (e) => { q.endTime = e.target.value || '16:30'; load(); };
   $('#list').onclick = async (e) => {
     const b = e.target.closest('[data-book]'), inf = e.target.closest('[data-info]');
-    if (b) openBooking(items.find((i) => i.id == b.dataset.book));
+    if (b) openBooking(items.find((i) => i.id == b.dataset.book), { range: { start: q.start, end: q.end, startTime: q.startTime, endTime: q.endTime } });
     if (inf) {
       const it = items.find((i) => i.id == inf.dataset.info);
       const bk = await api(`/api/items/${it.id}/bookings`);
@@ -336,7 +340,7 @@ function pageGuide() {
   view.innerHTML = `<div class="page-head"><div><h1>คู่มือการใช้งาน</h1><p>ขั้นตอนการใช้ CMEC E-Borrow App</p></div></div>
     ${sec(ic('search'), 'ดูหุ่นที่ว่าง', [
       ['ไปที่เมนู "หุ่นและอุปกรณ์"', 'จะเห็นรายการหุ่นทั้งหมดพร้อมรูปและสถานะ'],
-      ['เลือกช่วงวันที่ที่ต้องการใช้', 'ระบบจะคำนวณว่าหุ่นตัวใดว่างในช่วงวันที่นั้น'],
+      ['เลือกวันและเวลาที่ต้องการใช้', 'ระบบจะคำนวณว่าหุ่นตัวใดว่างในช่วงเวลานั้น และกรอกช่วงเวลาให้อัตโนมัติเมื่อกดจอง'],
       ['ค้นหา / กรองหมวดหมู่', 'ติ๊ก "แสดงเฉพาะที่ว่าง" เพื่อดูเฉพาะหุ่นที่พร้อมให้ยืม']])}
     ${sec(ic('bookings'), 'จองล่วงหน้า', [
       ['กดปุ่ม "จอง" ที่หุ่นที่ต้องการ', 'จะมีปฏิทินแสดงวันที่ถูกจองแล้ว (สีแดง)'],

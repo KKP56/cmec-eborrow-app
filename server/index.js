@@ -64,13 +64,16 @@ app.get('/api/categories', requireUser, (req, res) => res.json(CATEGORIES));
 
 app.get('/api/items', requireUser, (req, res) => {
   const start = isDate(req.query.start) ? req.query.start : today();
-  const end = isDate(req.query.end) ? req.query.end : start;
+  const end = isDate(req.query.end) && req.query.end >= start ? req.query.end : start;
+  // optional time range; without it the whole day(s) are checked
+  const startAt = `${start} ${isTime(req.query.startTime) ? req.query.startTime : '00:00'}`;
+  const endAt = `${end} ${isTime(req.query.endTime) ? req.query.endTime : '23:59'}`;
   const rows = db.prepare(`
     SELECT i.*,
       (SELECT COUNT(*) FROM bookings b WHERE b.item_id=i.id AND b.status IN ${ACTIVE}
-         AND b.start_date<=? AND b.end_date>=?) AS conflicts,
+         AND (b.start_date||' '||b.start_time) < ? AND (b.end_date||' '||b.end_time) > ?) AS conflicts,
       (SELECT COUNT(*) FROM bookings b WHERE b.item_id=i.id AND b.status='borrowed') AS borrowed
-    FROM items i ORDER BY i.code`).all(end, start);
+    FROM items i ORDER BY i.code`).all(endAt, startAt);
   res.json(rows.map((r) => ({ ...r, available: r.status === 'normal' && r.conflicts === 0 })));
 });
 
