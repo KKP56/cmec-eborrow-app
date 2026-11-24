@@ -14,7 +14,7 @@
 
 ## งานล่าสุด (19–24 พ.ย. 2569)
 - admin ลบบัญชีผู้ใช้ได้ (`DELETE /api/admin/users/:id` — ห้ามลบตัวเอง/admin คนสุดท้าย)
-- สคริปต์สำรองข้อมูล `npm run backup` / `backup-db.bat` (ดู README หัวข้อ "สำรองข้อมูล") — ยังไม่ได้ตั้ง Task Scheduler บนเครื่องจริง
+- สคริปต์สำรองข้อมูล `npm run backup` / `backup-db.bat` (ดู README หัวข้อ "สำรองข้อมูล") — ตั้ง Task Scheduler "CMEC E-Borrow Backup" บนเครื่องนี้แล้ว (ทุกวัน 18:00, เก็บใน `backups/`)
 
 ## ยังค้าง
 - เรื่องย้ายไปเซิร์ฟเวอร์โรงพยาบาล / login ด้วยบัญชีโรงพยาบาล (AD/LDAP หรือ SSO) — พักไว้ รอข้อมูลจาก IT

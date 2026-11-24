@@ -36,6 +36,11 @@ npm run backup
 - เก็บ 30 ชุดล่าสุด (เปลี่ยนด้วย `BACKUP_KEEP`) — เก็บไว้ไดรฟ์อื่นด้วย `BACKUP_DIR` (แก้ได้ใน `backup-db.bat`)
 - ตั้งให้รันทุกวันอัตโนมัติ (Task Scheduler ของ Windows) — รันใน PowerShell ครั้งเดียว:
   ```powershell
-  schtasks /Create /TN "CMEC E-Borrow Backup" /SC DAILY /ST 18:00 /TR "\"D:\AI\claude\CMEC Eborow App0.1.1\backup-db.bat\" auto"
+  $dir = 'D:\AI\claude\CMEC Eborow App0.1.1'
+  $action = New-ScheduledTaskAction -Execute 'cmd.exe' -Argument "/c `"`"$dir\backup-db.bat`" auto`"" -WorkingDirectory $dir
+  $trigger = New-ScheduledTaskTrigger -Daily -At 18:00
+  $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 30)
+  Register-ScheduledTask -TaskName 'CMEC E-Borrow Backup' -Action $action -Trigger $trigger -Settings $settings -Force
   ```
+  (ถ้าเครื่องปิดอยู่ตอน 18:00 จะสำรองให้ทันทีที่เปิดเครื่อง — ถ้าย้ายโฟลเดอร์แอปต้องแก้ `$dir` แล้วรันใหม่)
 - กู้คืน: ปิดเซิร์ฟเวอร์ → คัดลอก `eborrow.db`, `uploads/`, `secret.key` จากชุดที่ต้องการกลับไปไว้ใน `data/` → ลบ `data/eborrow.db-wal` และ `data/eborrow.db-shm` (ถ้ามี) → เปิดเซิร์ฟเวอร์ใหม่
