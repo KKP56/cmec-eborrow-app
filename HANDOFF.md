@@ -17,6 +17,13 @@
 - หน้ารายการหุ่น: ตัวกรอง "ว่าง" ดูตามวัน+เวลา (`/api/items?start&end&startTime&endTime`) และกด "จอง" แล้วกรอกช่วงเวลาให้อัตโนมัติ
 - รหัสบัญชีเริ่มต้น admin/user บนเครื่องนี้ถูกเปลี่ยนแล้ว
 
+## เวอร์ชัน Google Sheets + Apps Script (24 พ.ย. 2569 — โค้ดเสร็จ ยังไม่ได้ติดตั้งจริง)
+- อยู่ใน `apps-script/` (ขั้นตอนติดตั้งใน `apps-script/README.md`) — ผู้ใช้เลือก "ผู้ยืมไม่ต้อง login" ใช้ชื่อ/หน่วยงาน/เบอร์โทร, มีแค่บัญชี Admin
+- `node apps-script/build.js` → `apps-script/dist/` (มี SeedData.gs ข้อมูลส่วนบุคคล, gitignored)
+- ทดสอบ: `node apps-script/test/backend.test.js` (14 ผ่าน) + preview `apps-script-preview` พอร์ต 3100 (Google จำลอง)
+- ยังไม่ได้ทดสอบบน Google จริง: สิทธิ์ Drive/แชร์รูป, localStorage ใน iframe ของ Apps Script, ความเร็ว
+- เอกสารประเมิน: https://claude.ai/artifact/7RhZC7tqnXMfymLDFu2rou (PDF ใน `docs/`)
+
 ## ยังค้าง
 - เรื่องย้ายไปเซิร์ฟเวอร์โรงพยาบาล / login ด้วยบัญชีโรงพยาบาล (AD/LDAP หรือ SSO) — พักไว้ รอข้อมูลจาก IT
 

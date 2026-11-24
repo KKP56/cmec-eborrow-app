@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="th">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<?!= include('Style'); ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#/items" target="_self">
+      <? if (logoUrl) { ?><img src="<?= logoUrl ?>" alt="logo"><? } else { ?><span class="brand-mark">CMEC</span><? } ?>
+      <div>CMEC E-Borrow App<small>ระบบยืม-คืนหุ่นและอุปกรณ์ simulation</small></div>
+    </a>
+    <button class="menu-toggle" id="menuToggle" aria-label="เมนู">☰</button>
+    <div class="account">
+      <button class="account-btn" id="accBtn">
+        <span class="avatar" id="accAvatar">?</span>
+        <span class="who"><b id="accName">...</b><small id="accRole"></small></span>
+        <span style="color:var(--muted)">▾</span>
+      </button>
+      <div class="dropdown" id="accMenu"></div>
+    </div>
+  </div>
+</header>
+<div class="shell">
+  <aside class="sidebar"><nav class="nav" id="nav"></nav></aside>
+  <div class="sidebar-bg" id="sidebarBg"></div>
+  <main class="container" id="view"><div class="empty">กำลังโหลด...</div></main>
+</div>
+<div id="toast"></div>
+<?!= include('App'); ?>
+</body>
+</html>
