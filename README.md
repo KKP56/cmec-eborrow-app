@@ -25,3 +25,17 @@ npm start
 - รูปที่อัปโหลด: `data/uploads/`
 - รายการหุ่นเริ่มต้นสร้างจากชื่อไฟล์ใน `pic/` (`<รหัส>-<ชื่อ>.jpg`) เมื่อฐานข้อมูลยังว่าง
 - สถิติเก็บแยกรายเดือน: เดือนใหม่เริ่มนับจาก 0 อัตโนมัติ และดูย้อนหลังได้
+
+## สำรองข้อมูล
+```bash
+npm run backup
+```
+หรือดับเบิลคลิก `backup-db.bat` — รันได้ขณะเซิร์ฟเวอร์ทำงานอยู่
+
+- สร้างโฟลเดอร์ `backups/eborrow-<วันที่_เวลา>/` มี `eborrow.db`, `uploads/`, `secret.key` และตรวจความสมบูรณ์ของสำเนาให้อัตโนมัติ
+- เก็บ 30 ชุดล่าสุด (เปลี่ยนด้วย `BACKUP_KEEP`) — เก็บไว้ไดรฟ์อื่นด้วย `BACKUP_DIR` (แก้ได้ใน `backup-db.bat`)
+- ตั้งให้รันทุกวันอัตโนมัติ (Task Scheduler ของ Windows) — รันใน PowerShell ครั้งเดียว:
+  ```powershell
+  schtasks /Create /TN "CMEC E-Borrow Backup" /SC DAILY /ST 18:00 /TR "\"D:\AI\claude\CMEC Eborow App0.1.1\backup-db.bat\" auto"
+  ```
+- กู้คืน: ปิดเซิร์ฟเวอร์ → คัดลอก `eborrow.db`, `uploads/`, `secret.key` จากชุดที่ต้องการกลับไปไว้ใน `data/` → ลบ `data/eborrow.db-wal` และ `data/eborrow.db-shm` (ถ้ามี) → เปิดเซิร์ฟเวอร์ใหม่

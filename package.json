@@ -4,7 +4,8 @@
   "description": "CMEC E-Borrow App - ระบบยืมคืนหุ่นและอุปกรณ์ simulation",
   "main": "server/index.js",
   "scripts": {
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "backup": "node scripts/backup.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
