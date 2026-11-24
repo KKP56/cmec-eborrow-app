@@ -17,7 +17,11 @@
 - หน้ารายการหุ่น: ตัวกรอง "ว่าง" ดูตามวัน+เวลา (`/api/items?start&end&startTime&endTime`) และกด "จอง" แล้วกรอกช่วงเวลาให้อัตโนมัติ
 - รหัสบัญชีเริ่มต้น admin/user บนเครื่องนี้ถูกเปลี่ยนแล้ว
 
-## เวอร์ชัน Google Sheets + Apps Script (24 พ.ย. 2569 — โค้ดเสร็จ ยังไม่ได้ติดตั้งจริง)
+## เวอร์ชัน Google Sheets + Apps Script (ใช้งานจริงแล้ว 24 พ.ย. 2569)
+- ลิงก์ใช้งาน: https://script.google.com/macros/s/AKfycbxxcNv4g2z10U_3zJS3UgSo0sMbz8OeLqY4HCBXrbL-L0XsAUaHBZOkC1w7lls7YrI0wQ/exec
+- โปรเจกต์ Apps Script "Mecdical Chonburi" (ผูกกับ Google Sheet ที่เก็บข้อมูล) — Script ID `13VukLylhUSu0dmJu7Cf86TV8ImTqEMZD-jr1T0n_Hle0PuLr9XsQxGP_`
+- อัปเดตโค้ดจากเครื่องใหม่: `npm install` → `node apps-script/build.js --no-data` → สร้าง `apps-script/dist/.clasp.json` = `{"scriptId":"<Script ID>","rootDir":"."}` และ `.claspignore` (SeedData.gs) → `npx.cmd @google/clasp login` → `npx.cmd @google/clasp push --force` → `npx.cmd @google/clasp update-deployment AKfycbxxcNv4g2z10U_3zJS3UgSo0sMbz8OeLqY4HCBXrbL-L0XsAUaHBZOkC1w7lls7YrI0wQ`
+- ค้าง: รัน removeExtraItems (ลบหุ่น M013,M015-M018,M020,N003) ถ้ายังไม่ได้รัน แล้วเอาฟังก์ชันออก; แจ้งเตือนทางอีเมลเมื่อมีการจอง (ยังไม่ได้ทำ); ปิดระบบเดิมบนเครื่อง
 - อยู่ใน `apps-script/` (ขั้นตอนติดตั้งใน `apps-script/README.md`) — ผู้ใช้เลือก "ผู้ยืมไม่ต้อง login" ใช้ชื่อ/หน่วยงาน/เบอร์โทร, มีแค่บัญชี Admin
 - `node apps-script/build.js` → `apps-script/dist/` (มี SeedData.gs ข้อมูลส่วนบุคคล, gitignored)
 - ทดสอบ: `node apps-script/test/backend.test.js` (14 ผ่าน) + preview `apps-script-preview` พอร์ต 3100 (Google จำลอง)
